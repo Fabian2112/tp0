@@ -1,6 +1,7 @@
 #include "utils.h"
 
 
+
 void* serializar_paquete(t_paquete* paquete, int bytes)
 {
 	void * magic = malloc(bytes);
@@ -30,19 +31,33 @@ int crear_conexion(char *ip, char* puerto)
 
 	// Ahora vamos a crear el socket.
 	//int socket_cliente = 0;
-
-	// Ahora que tenemos el socket, vamos a conectarlo
-
+	
 	int socket_cliente = socket(server_info->ai_family,
 								server_info->ai_socktype,
 								server_info->ai_protocol);
+
+	if (socket_cliente == -1) {
+		perror("Error al crear socket");
+		freeaddrinfo(server_info);
+		return -1;
+	}
+	
+	// Ahora que tenemos el socket, vamos a conectarlo
+	
+	if (connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1) {
+		perror("Error al conectar con el servidor");
+		close(socket_cliente);
+		freeaddrinfo(server_info);
+		return -1;
+	}
+	
 
 	freeaddrinfo(server_info);
 
 	return socket_cliente;
 }
 
-void enviar_mensaje(char* mensaje, int socket_cliente)
+void enviar_mensaje(char* mensaje, int socket_cliente, t_log* logger)
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
 
@@ -56,7 +71,14 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 
 	void* a_enviar = serializar_paquete(paquete, bytes);
 
-	send(socket_cliente, a_enviar, bytes, 0);
+	int resultado = send(socket_cliente, a_enviar, bytes, 0);
+
+	if (resultado == -1) {
+        log_error(logger, "Error al enviar mensaje");
+		perror("Error al enviar mensaje");
+    } else {
+		log_info(logger, "Mensaje enviado correctamente.");
+	}
 
 	free(a_enviar);
 	eliminar_paquete(paquete);

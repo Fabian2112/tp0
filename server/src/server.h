@@ -7,6 +7,6 @@
 #include <commons/log.h>
 #include "utils.h"
 
-void iterator(char* value);
+void iterator(void* value);
 
 #endif /* SERVER_H_ */
